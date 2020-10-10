@@ -70,6 +70,10 @@ var (
 	RetainSnapshot TestSnapshotDeletionPolicy = "Retain"
 )
 
+func (t TestSnapshotDeletionPolicy) String() string {
+	return string(t)
+}
+
 // TestPattern represents a combination of parameters to be tested in a TestSuite
 type TestPattern struct {
 	Name                   string                      // Name of TestPattern
@@ -248,12 +252,14 @@ var (
 		FsType:     "ntfs",
 		FeatureTag: "[sig-windows]",
 	}
-	// NtfsDynamicPV is TestPattern for "Dynamic PV (xfs)"
+	// NtfsDynamicPV is TestPattern for "Dynamic PV (ntfs)"
 	NtfsDynamicPV = TestPattern{
-		Name:       "Dynamic PV (ntfs)",
-		VolType:    DynamicPV,
-		FsType:     "ntfs",
-		FeatureTag: "[sig-windows]",
+		Name:                   "Dynamic PV (ntfs)",
+		VolType:                DynamicPV,
+		FsType:                 "ntfs",
+		FeatureTag:             "[sig-windows]",
+		SnapshotDeletionPolicy: DeleteSnapshot,
+		SnapshotType:           DynamicCreatedSnapshot,
 	}
 
 	// Definitions for Filesystem volume mode

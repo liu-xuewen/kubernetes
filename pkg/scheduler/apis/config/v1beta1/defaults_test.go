@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	"k8s.io/apiserver/pkg/util/feature"
 	componentbaseconfig "k8s.io/component-base/config/v1alpha1"
 	"k8s.io/component-base/featuregate"
 	featuregatetesting "k8s.io/component-base/featuregate/testing"
@@ -56,7 +56,7 @@ func TestSchedulerDefaults(t *testing.T) {
 					LeaseDuration:     metav1.Duration{Duration: 15 * time.Second},
 					RenewDeadline:     metav1.Duration{Duration: 10 * time.Second},
 					RetryPeriod:       metav1.Duration{Duration: 2 * time.Second},
-					ResourceLock:      "endpointsleases",
+					ResourceLock:      "leases",
 					ResourceNamespace: "kube-system",
 					ResourceName:      "kube-scheduler",
 				},
@@ -96,7 +96,7 @@ func TestSchedulerDefaults(t *testing.T) {
 					LeaseDuration:     metav1.Duration{Duration: 15 * time.Second},
 					RenewDeadline:     metav1.Duration{Duration: 10 * time.Second},
 					RetryPeriod:       metav1.Duration{Duration: 2 * time.Second},
-					ResourceLock:      "endpointsleases",
+					ResourceLock:      "leases",
 					ResourceNamespace: "kube-system",
 					ResourceName:      "kube-scheduler",
 				},
@@ -151,7 +151,7 @@ func TestSchedulerDefaults(t *testing.T) {
 					LeaseDuration:     metav1.Duration{Duration: 15 * time.Second},
 					RenewDeadline:     metav1.Duration{Duration: 10 * time.Second},
 					RetryPeriod:       metav1.Duration{Duration: 2 * time.Second},
-					ResourceLock:      "endpointsleases",
+					ResourceLock:      "leases",
 					ResourceNamespace: "kube-system",
 					ResourceName:      "kube-scheduler",
 				},
@@ -200,7 +200,7 @@ func TestSchedulerDefaults(t *testing.T) {
 					LeaseDuration:     metav1.Duration{Duration: 15 * time.Second},
 					RenewDeadline:     metav1.Duration{Duration: 10 * time.Second},
 					RetryPeriod:       metav1.Duration{Duration: 2 * time.Second},
-					ResourceLock:      "endpointsleases",
+					ResourceLock:      "leases",
 					ResourceNamespace: "kube-system",
 					ResourceName:      "kube-scheduler",
 				},
@@ -235,7 +235,7 @@ func TestSchedulerDefaults(t *testing.T) {
 					LeaseDuration:     metav1.Duration{Duration: 15 * time.Second},
 					RenewDeadline:     metav1.Duration{Duration: 10 * time.Second},
 					RetryPeriod:       metav1.Duration{Duration: 2 * time.Second},
-					ResourceLock:      "endpointsleases",
+					ResourceLock:      "leases",
 					ResourceNamespace: "kube-system",
 					ResourceName:      "kube-scheduler",
 				},
@@ -367,7 +367,9 @@ func TestPluginArgsDefaults(t *testing.T) {
 		{
 			name: "PodTopologySpreadArgs resources empty",
 			in:   &v1beta1.PodTopologySpreadArgs{},
-			want: &v1beta1.PodTopologySpreadArgs{},
+			want: &v1beta1.PodTopologySpreadArgs{
+				DefaultingType: v1beta1.ListDefaulting,
+			},
 		},
 		{
 			name: "PodTopologySpreadArgs resources with value",
@@ -388,12 +390,29 @@ func TestPluginArgsDefaults(t *testing.T) {
 						MaxSkew:           2,
 					},
 				},
+				DefaultingType: v1beta1.ListDefaulting,
 			},
 		},
 		{
-			name:    "PodTopologySpreadArgs resources empty, NewPodTopologySpread feature enabled",
+			name:    "PodTopologySpreadArgs empty, DefaultPodTopologySpread feature enabled",
 			feature: features.DefaultPodTopologySpread,
 			in:      &v1beta1.PodTopologySpreadArgs{},
+			want: &v1beta1.PodTopologySpreadArgs{
+				DefaultingType: v1beta1.SystemDefaulting,
+			},
+		},
+		{
+			name:    "PodTopologySpreadArgs with constraints, DefaultPodTopologySpread feature enabled",
+			feature: features.DefaultPodTopologySpread,
+			in: &v1beta1.PodTopologySpreadArgs{
+				DefaultConstraints: []v1.TopologySpreadConstraint{
+					{
+						TopologyKey:       v1.LabelHostname,
+						WhenUnsatisfiable: v1.ScheduleAnyway,
+						MaxSkew:           3,
+					},
+				},
+			},
 			want: &v1beta1.PodTopologySpreadArgs{
 				DefaultConstraints: []v1.TopologySpreadConstraint{
 					{
@@ -401,12 +420,9 @@ func TestPluginArgsDefaults(t *testing.T) {
 						WhenUnsatisfiable: v1.ScheduleAnyway,
 						MaxSkew:           3,
 					},
-					{
-						TopologyKey:       v1.LabelZoneFailureDomainStable,
-						WhenUnsatisfiable: v1.ScheduleAnyway,
-						MaxSkew:           5,
-					},
 				},
+				// TODO(#94008): Make SystemDefaulting in v1beta2.
+				DefaultingType: v1beta1.ListDefaulting,
 			},
 		},
 	}
@@ -415,7 +431,7 @@ func TestPluginArgsDefaults(t *testing.T) {
 		utilruntime.Must(AddToScheme(scheme))
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.feature != "" {
-				defer featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, tc.feature, true)()
+				defer featuregatetesting.SetFeatureGateDuringTest(t, feature.DefaultFeatureGate, tc.feature, true)()
 			}
 			scheme.Default(tc.in)
 			if diff := cmp.Diff(tc.in, tc.want); diff != "" {
