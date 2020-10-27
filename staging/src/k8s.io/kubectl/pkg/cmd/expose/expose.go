@@ -119,13 +119,14 @@ func NewExposeServiceOptions(ioStreams genericclioptions.IOStreams) *ExposeServi
 	}
 }
 
+// 创建expose命令
 func NewCmdExposeService(f cmdutil.Factory, streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewExposeServiceOptions(streams)
+	o := NewExposeServiceOptions(streams) //初始化结构体
 
 	validArgs := []string{}
 	resources := regexp.MustCompile(`\s*,`).Split(exposeResources, -1)
 	for _, r := range resources {
-		validArgs = append(validArgs, strings.Fields(r)[0])
+		validArgs = append(validArgs, strings.Fields(r)[0]) //设置有效参数
 	}
 
 	cmd := &cobra.Command{
@@ -135,15 +136,16 @@ func NewCmdExposeService(f cmdutil.Factory, streams genericclioptions.IOStreams)
 		Long:                  exposeLong,
 		Example:               exposeExample,
 		Run: func(cmd *cobra.Command, args []string) {
-			cmdutil.CheckErr(o.Complete(f, cmd))
+			cmdutil.CheckErr(o.Complete(f, cmd))	//准备运行
 			cmdutil.CheckErr(o.RunExpose(cmd, args))
 		},
 		ValidArgs: validArgs,
 	}
 
-	o.RecordFlags.AddFlags(cmd)
-	o.PrintFlags.AddFlags(cmd)
+	o.RecordFlags.AddFlags(cmd)	//设置record选项
+	o.PrintFlags.AddFlags(cmd)	//设置print选项
 
+	//设置generator选项
 	cmd.Flags().String("generator", "service/v2", i18n.T("The name of the API generator to use. There are 2 generators: 'service/v1' and 'service/v2'. The only difference between them is that service port in v1 is named 'default', while it is left unnamed in v2. Default is 'service/v2'."))
 	cmd.Flags().String("protocol", "", i18n.T("The network protocol for the service to be created. Default is 'TCP'."))
 	cmd.Flags().String("port", "", i18n.T("The port that the service should serve on. Copied from the resource being exposed, if unspecified"))
@@ -162,15 +164,17 @@ func NewCmdExposeService(f cmdutil.Factory, streams genericclioptions.IOStreams)
 	cmdutil.AddFieldManagerFlagVar(cmd, &o.fieldManager, "kubectl-expose")
 
 	usage := "identifying the resource to expose a service"
-	cmdutil.AddFilenameOptionFlags(cmd, &o.FilenameOptions, usage)
-	cmdutil.AddDryRunFlag(cmd)
-	cmdutil.AddApplyAnnotationFlags(cmd)
+	cmdutil.AddFilenameOptionFlags(cmd, &o.FilenameOptions, usage)	//设置-f选项
+	cmdutil.AddDryRunFlag(cmd)										//设置dry-run选项
+	cmdutil.AddApplyAnnotationFlags(cmd)							//设置save-config选项
 	return cmd
 }
 
+
+//准备函数
 func (o *ExposeServiceOptions) Complete(f cmdutil.Factory, cmd *cobra.Command) error {
 	var err error
-	o.DryRunStrategy, err = cmdutil.GetDryRunStrategy(cmd)
+	o.DryRunStrategy, err = cmdutil.GetDryRunStrategy(cmd) //设置dry-run
 	if err != nil {
 		return err
 	}
@@ -185,11 +189,11 @@ func (o *ExposeServiceOptions) Complete(f cmdutil.Factory, cmd *cobra.Command) e
 	o.DryRunVerifier = resource.NewDryRunVerifier(dynamicClient, discoveryClient)
 
 	cmdutil.PrintFlagsWithDryRunStrategy(o.PrintFlags, o.DryRunStrategy)
-	printer, err := o.PrintFlags.ToPrinter()
+	printer, err := o.PrintFlags.ToPrinter()	//print flag转printer
 	if err != nil {
 		return err
 	}
-	o.PrintObj = printer.PrintObj
+	o.PrintObj = printer.PrintObj				//设置printObj函数
 
 	o.RecordFlags.Complete(cmd)
 	o.Recorder, err = o.RecordFlags.ToRecorder()

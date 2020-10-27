@@ -316,7 +316,10 @@ func NewDefaultKubectlCommandWithArgs(pluginHandler PluginHandler, args []string
 
 		// only look for suitable extension executables if
 		// the specified command does not already exist
-		if _, _, err := cmd.Find(cmdPathPieces); err != nil {
+		//
+		// 如果指定的命令尚不存在，则仅查找合适的扩展可执行文件
+		// [Kubectl命令行工具拓展实战及源码解析](https://zhuanlan.zhihu.com/p/96796587)
+		if _, _, err := cmd.Find(cmdPathPieces); err != nil { //如果找到Kubectl子命令，直接退出？
 			if err := HandlePluginCommand(pluginHandler, cmdPathPieces); err != nil {
 				fmt.Fprintf(errout, "%v\n", err)
 				os.Exit(1)
@@ -392,11 +395,14 @@ func (h *DefaultPluginHandler) Execute(executablePath string, cmdArgs, environme
 
 // HandlePluginCommand receives a pluginHandler and command-line arguments and attempts to find
 // a plugin executable on the PATH that satisfies the given arguments.
+//
+// HandlePluginCommand接收pluginHandler和命令行参数，并尝试在路径上查找满足给定参数的插件可执行文件。
+//
 func HandlePluginCommand(pluginHandler PluginHandler, cmdArgs []string) error {
 	remainingArgs := []string{} // all "non-flag" arguments
 
 	for idx := range cmdArgs {
-		if strings.HasPrefix(cmdArgs[idx], "-") {
+		if strings.HasPrefix(cmdArgs[idx], "-") {	// 跳过flag参数
 			break
 		}
 		remainingArgs = append(remainingArgs, strings.Replace(cmdArgs[idx], "-", "_", -1))
@@ -405,6 +411,7 @@ func HandlePluginCommand(pluginHandler PluginHandler, cmdArgs []string) error {
 	foundBinaryPath := ""
 
 	// attempt to find binary, starting at longest possible name with given cmdArgs
+	// 尝试查找二进制文件，从给定cmdArgs的尽可能长的名称开始
 	for len(remainingArgs) > 0 {
 		path, found := pluginHandler.Lookup(strings.Join(remainingArgs, "-"))
 		if !found {

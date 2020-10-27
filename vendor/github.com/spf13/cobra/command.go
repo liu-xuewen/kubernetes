@@ -606,6 +606,10 @@ func isFlagArg(arg string) bool {
 
 // Find the target command given the args and command tree
 // Meant to be run on the highest node. Only searches down.
+//
+// 在给定要在最高节点上运行的参数和命令树的情况下，查找目标命令。
+// 只向下搜索。
+//
 func (c *Command) Find(args []string) (*Command, []string, error) {
 	var innerfind func(*Command, []string) (*Command, []string)
 

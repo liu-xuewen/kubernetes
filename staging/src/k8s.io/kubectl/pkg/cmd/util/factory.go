@@ -37,6 +37,14 @@ import (
 // TODO: make the functions interfaces
 // TODO: pass the various interfaces on the factory directly into the command constructors (so the
 // commands are decoupled from the factory).
+//
+// Factory提供的抽象允许Kubectl命令跨多种类型的资源和不同的API集进行扩展。
+// 戒指在这里是有原因的。
+// 为了让编写器能够提供替代的工厂实现，他们需要提供*某些*函数的低级片断，以便当工厂回调到自身时，它使用函数的自定义版本。
+// 我们将工厂拆分成环，其中每个环可以依赖于前一个环中的方法，但不能依赖于自己环中的对等方法，而不是试图枚举某人想要覆盖的所有内容。
+// TODO：使函数接口成为
+// TODO：将工厂上的各种接口直接传递到命令构造函数中(以便命令与工厂解耦)。
+//
 type Factory interface {
 	genericclioptions.RESTClientGetter
 
@@ -51,10 +59,16 @@ type Factory interface {
 
 	// NewBuilder returns an object that assists in loading objects from both disk and the server
 	// and which implements the common patterns for CLI interactions with generic resources.
+	//
+	// NewBuilder返回一个对象，该对象帮助从磁盘和服务器加载对象，并实现CLI与通用资源交互的常见模式。
 	NewBuilder() *resource.Builder
 
 	// Returns a RESTClient for working with the specified RESTMapping or an error. This is intended
 	// for working with arbitrary resources and is not guaranteed to point to a Kubernetes APIServer.
+	//
+	// 返回用于使用指定RESTMapping的RESTClient或错误。
+	// 这是为处理任意资源而设计的，不能保证指向Kubernetes APIServer。
+	//
 	ClientForMapping(mapping *meta.RESTMapping) (resource.RESTClient, error)
 	// Returns a RESTClient for working with Unstructured objects.
 	UnstructuredClientForMapping(mapping *meta.RESTMapping) (resource.RESTClient, error)

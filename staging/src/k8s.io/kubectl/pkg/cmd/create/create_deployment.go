@@ -90,6 +90,10 @@ func NewCreateCreateDeploymentOptions(ioStreams genericclioptions.IOStreams) *Cr
 
 // NewCmdCreateDeployment is a macro command to create a new deployment.
 // This command is better known to users as `kubectl create deployment`.
+//
+// NewCmdCreateDeployment是用于创建新展开的宏命令。
+// 用户更多地将此命令称为`kubectl create deployment`。
+//
 func NewCmdCreateDeployment(f cmdutil.Factory, ioStreams genericclioptions.IOStreams) *cobra.Command {
 	o := NewCreateCreateDeploymentOptions(ioStreams)
 	cmd := &cobra.Command{
